@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* Custom Scrollbar untuk kenyamanan visual */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #072530; }
+::-webkit-scrollbar-thumb { background: #114b5f; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #14b8a6; }
+
+/* Animasi Bawaan Game Petualangan Numerika */
+@keyframes floatCloud { 
+  0% { transform: translateX(-150px); } 
+  100% { transform: translateX(100vw); } 
+}
+@keyframes heroBounce { 
+  0%, 100% { transform: translateY(0) scaleX(1); } 
+  50% { transform: translateY(-16px) scaleX(0.95); } 
+}
+@keyframes pulseGlow { 
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.6)); } 
+  50% { filter: drop-shadow(0 0 25px rgba(245, 158, 11, 0.95)); } 
+}
+@keyframes marchDots { to { stroke-dashoffset: -40; } }
+@keyframes rotateCompass { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes swayBoat { 
+  0%, 100% { transform: translateY(0) rotate(0deg); } 
+  50% { transform: translateY(-4px) rotate(3deg); } 
+}
+@keyframes pinFloat { 
+  0%, 100% { transform: translateY(0); } 
+  50% { transform: translateY(-10px); } 
+}
+@keyframes waveFlow { 
+  0% { transform: translateX(0); } 
+  100% { transform: translateX(-50%); } 
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+  20%, 40%, 60%, 80% { transform: translateX(8px); }
+}
+
+.animate-cloud-slow { animation: floatCloud 55s linear infinite; }
+.animate-cloud-fast { animation: floatCloud 32s linear infinite; }
+.animate-hero-bounce { animation: heroBounce 1.5s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulseGlow 2s infinite; }
+.animate-march { animation: marchDots 8s linear infinite; }
+.animate-compass { animation: rotateCompass 40s linear infinite; }
+.animate-boat { animation: swayBoat 3s ease-in-out infinite; }
+.animate-pin { animation: pinFloat 1.8s ease-in-out infinite; }
+.animate-wave { animation: waveFlow linear infinite; }
+.animate-shake { animation: shake 0.4s ease-in-out; }
