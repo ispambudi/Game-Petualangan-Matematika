@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import Auth from './Auth'; // <-- TAMBAHAN: Memanggil gerbang Login
 
 // --- SOUND ENGINE ---
 const playSound = (type) => {
@@ -265,13 +266,56 @@ const generateQuestion = (level) => {
 // --- KOMPONEN UTAMA GAME ---
 export default function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // --- TAMBAHAN: State untuk Autentikasi ---
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    
+    // --- TAMBAHAN: Listener Login Supabase ---
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      subscription.unsubscribe();
+    };
+  }, []);
+// Kode untuk mengambil data pemain dari Supabase
+  useEffect(() => {
+    if (session?.user?.email) {
+      const fetchPlayerData = async () => {
+        const { data, error } = await supabase
+          .from('player_progress')
+          .select('*')
+          .eq('username', session.user.email)
+          .single();
+
+        if (data) {
+          setGold(data.gold || 100);
+          setXp(data.xp || 0);
+          setMaxUnlockedLevel(data.max_unlocked_level || 1);
+          if (data.level_stats) setLevelStats(data.level_stats);
+        }
+      };
+      fetchPlayerData();
+    } else {
+      // Reset data ke angka awal jika pemain belum login
+      setGold(100);
+      setXp(0);
+      setMaxUnlockedLevel(1);
+      setLevelStats({});
+    }
+  }, [session]);
   const [currentPage, setCurrentPage] = useState('MAP'); 
   const [activeRegion, setActiveRegion] = useState(null);
   const [activeLevel, setActiveLevel] = useState(null);
@@ -320,7 +364,7 @@ export default function App() {
 
   const triggerShake = () => { setIsShake(true); setTimeout(() => setIsShake(false), 500); };
 
-  // --- FUNGSI CLOUD SAVE SUPABASE DARI LOGIKA UTAMA ---
+  // --- FUNGSI CLOUD SAVE SUPABASE ---
   const evaluateGameEnd = async (finalScore) => {
     if (finalScore >= 7) {
       setGameStatus('won'); playSound('victory');
@@ -341,7 +385,8 @@ export default function App() {
         await supabase
           .from('player_progress')
           .upsert({
-            username: 'Indra',
+            // --- TAMBAHAN: Menggunakan Email Pemain yang Sedang Login ---
+            username: session?.user?.email || 'Pemain_Anonim', 
             xp: newXp,
             gold: newGold,
             max_unlocked_level: nextLevel,
@@ -391,7 +436,11 @@ export default function App() {
                   <span className="font-black text-lg text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-400">{hero.name}</span>
                   <span className="text-[10px] bg-amber-500/25 border border-amber-500/50 text-amber-300 px-2 py-0.5 rounded-full font-bold">LV. {Math.floor(xp/200) + 1}</span>
                 </div>
-                <p className="text-xs text-slate-300 font-medium">Gelar: <span className="text-teal-300 font-bold">{getRankTitle()}</span></p>
+                {/* --- TAMBAHAN: Tombol Logout --- */}
+                <div className="flex items-center gap-2">
+                   <p className="text-xs text-slate-300 font-medium">Gelar: <span className="text-teal-300 font-bold">{getRankTitle()}</span></p>
+                   <button onClick={() => supabase.auth.signOut()} className="text-[10px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded hover:bg-red-500/40 transition-colors">Keluar Akun</button>
+                </div>
               </div>
             </div>
             
@@ -686,11 +735,18 @@ export default function App() {
     );
   };
 
+  // --- TAMBAHAN: Logika Render Gerbang vs Game ---
   return (
     <React.Fragment>
-      {currentPage === 'MAP' && <Page1Map />}
-      {currentPage === 'REGION' && <Page2Region />}
-      {currentPage === 'GAME' && <Page3Game />}
+      {!session ? (
+        <Auth />
+      ) : (
+        <>
+          {currentPage === 'MAP' && <Page1Map />}
+          {currentPage === 'REGION' && <Page2Region />}
+          {currentPage === 'GAME' && <Page3Game />}
+        </>
+      )}
     </React.Fragment>
   );
 }
